@@ -1,5 +1,11 @@
 FROM lscr.io/linuxserver/webtop:ubuntu-xfce
 
+# ملصقات وصفية لزيادة التوافق مع GHCR والأدوات الأخرى
+LABEL org.opencontainers.image.source="https://github.com/ayoub55555555/webtop-vps-custom"
+LABEL org.opencontainers.image.description="Webtop VPS with SSH and tmate pre-installed"
+LABEL org.opencontainers.image.licenses=MIT
+LABEL maintainer="ayoub55555555"
+
 # تثبيت الحزم المطلوبة
 RUN \
   echo "**** install runtime packages ****" && \

@@ -1,32 +1,37 @@
-FROM lscr.io/linuxserver/webtop:ubuntu-xfce
+# استخدام نسخة أوبونتو مستقرة
+FROM ubuntu:22.04
 
-# ملصقات وصفية لزيادة التوافق مع GHCR والأدوات الأخرى
-LABEL org.opencontainers.image.source="https://github.com/ayoub55555555/webtop-vps-custom"
-LABEL org.opencontainers.image.description="Webtop VPS with SSH and tmate pre-installed"
-LABEL org.opencontainers.image.licenses=MIT
-LABEL maintainer="ayoub55555555"
+# منع النوافذ التفاعلية أثناء التثبيت
+ENV DEBIAN_FRONTEND=noninteractive
 
-# تثبيت الحزم المطلوبة
-RUN \
-  echo "**** install runtime packages ****" && \
-  apt-get update && \
-  apt-get install -y \
+# تحديث النظام وتثبيت الأدوات الأساسية (SSH, بايثون, Git, وغيرها)
+RUN apt-get update && apt-get install -y \
     openssh-server \
-    tmate \
-    sudo && \
-  echo "**** setup ssh ****" && \
-  mkdir -p /var/run/sshd && \
-  echo 'root:root' | chpasswd && \
-  sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
-  echo "**** cleanup ****" && \
-  apt-get clean && \
-  rm -rf /var/lib/apt/lists/*
+    sudo \
+    curl \
+    wget \
+    nano \
+    git \
+    python3 \
+    python3-pip \
+    htop \
+    && rm -rf /var/lib/apt/lists/*
 
-# إضافة سكربت الإقلاع
-COPY init.sh /etc/cont-init.d/99-custom-init
+# إعداد خدمة SSH
+RUN mkdir /var/run/sshd
+# السماح بتسجيل الدخول كـ Root
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+RUN sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
 
-# تعيين أذونات التنفيذ للسكربت
-RUN chmod +x /etc/cont-init.d/99-custom-init
+# تعيين كلمة مرور افتراضية (يمكنك تغييرها لاحقاً أو تمريرها كمتغير بيئة)
+RUN echo 'root:2004' | chpasswd
 
-# فتح المنافذ المطلوبة
-EXPOSE 22 3000 3001
+# إنشاء مجلد العمل الذي سيتم ربطه بالـ Volume
+RUN mkdir -p /workspace
+WORKDIR /workspace
+
+# فتح منفذ SSH
+EXPOSE 22
+
+# تشغيل خدمة SSH وإبقاؤها في الخلفية حتى لا تنطفئ الحاوية
+CMD ["/usr/sbin/sshd", "-D"]
